@@ -1,0 +1,31 @@
+name: Deploy
+on:
+  push:
+    branches:
+      - "master"
+jobs:
+  tag:
+    name: New version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
+      - name: Build
+        run: |
+          echo "BUILD_NAME=$(node -pe "require('./package.json').name")" >> $GITHUB_ENV
+          echo "BUILD_VERSION=$(node -pe "require('./package.json').version")" >> $GITHUB_ENV
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          echo "$GITHUB_CONTEXT"
+      - name: Send update to the store
+        env:
+          PRODUCT_ID: '12345'
+          AUTH_TOKEN: 'auth'
+          STORE_URL: 'abaic.us/store'
+          GITHUB_TOKEN: 'test'
+          BUILD_VERSION: ${{ steps.get_version.outputs.VERSION }}
+        uses: Codeinwp/action-store-release@fix/newline
